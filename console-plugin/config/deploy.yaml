@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ahv-to-ove-plugin
+  namespace: ahv-to-ove-operator-system
+  labels:
+    app: ahv-to-ove-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ahv-to-ove-plugin
+  template:
+    metadata:
+      labels:
+        app: ahv-to-ove-plugin
+    spec:
+      containers:
+        - name: plugin
+          image: ghcr.io/lightwell-tech/ahv-to-ove-plugin:v0.1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9001
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /var/serving-cert
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: ahv-to-ove-plugin-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ahv-to-ove-plugin
+  namespace: ahv-to-ove-operator-system
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: ahv-to-ove-plugin-tls
+spec:
+  ports:
+    - port: 9001
+      targetPort: 9001
+  selector:
+    app: ahv-to-ove-plugin
+---
+apiVersion: console.openshift.io/v1alpha1
+kind: ConsolePlugin
+metadata:
+  name: ahv-to-ove-plugin
+spec:
+  displayName: "AHV to OVE Migration"
+  service:
+    name: ahv-to-ove-plugin
+    namespace: ahv-to-ove-operator-system
+    port: 9001
+    basePath: /

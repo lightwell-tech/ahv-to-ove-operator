@@ -1,0 +1,7 @@
+annotations:
+  operators.operatorframework.io.bundle.channel.default.v1: alpha
+  operators.operatorframework.io.bundle.channels.v1: alpha
+  operators.operatorframework.io.bundle.mediatype.v1: registry+v1
+  operators.operatorframework.io.bundle.package.v1: ahv-to-ove-operator
+  # Supported OpenShift versions for community-operators-prod (>= 4.12)
+  com.redhat.openshift.versions: "v4.12"

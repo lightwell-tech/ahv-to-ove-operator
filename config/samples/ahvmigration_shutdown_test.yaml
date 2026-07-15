@@ -1,0 +1,37 @@
+---
+# shutdownBeforeMigration テスト: bare disk VM の停止→image化→CDIインポート
+# テスト対象: example-vm（bare disk のみの VM）
+#
+# 事前準備:
+#   oc delete ahvmigration shutdown-test-01 -n ahv-to-ove-operator-system (既存があれば)
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: shutdown-test-01
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-central.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    shutdownBeforeMigration: true   # VM 停止 + Prism image 化フローを使う
+
+  vms:
+    - name: example-vm          # bare disk VM（image backing なし）
+      targetName: ansible-lw-migrated
+
+  networkMappings:
+    - source: "VLAN-100"
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: "default"
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteMany
+      volumeMode: Block
+
+  targetNamespace: "vm-migration"

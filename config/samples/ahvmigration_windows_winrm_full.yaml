@@ -1,0 +1,136 @@
+---
+# windows-vm-01 WinRM GuestPrep テスト用
+#
+# 対象VM: windows-vm-01 (AHV)
+#   IP: 203.0.113.75
+#   WinRM: HTTPS 5986 (NTLM/Negotiate)
+#   認証: Administrator（パスワードは winrm-test-win Secret 参照）
+#
+# 事前確認済み:
+#   - WinRM HTTPS 5986 NTLM 認証 OK
+#   - C:\virtio-win.iso 未存在 → preMigrationScript で HTTP サーバーからダウンロード
+#   - virtio-iso-server: http://<virtio-iso-server>:<nodePort>/ (NodePort, vm-migration ns)
+#
+# 適用:
+#   oc apply -f ahvmigration_test_win_winrm.yaml
+#   oc get ahvmigration win-test-win -n ahv-to-ove-operator-system -w
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: win-test-win
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-element.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    shutdownBeforeMigration: true
+    warmMigration: false
+    # PE endpoint: 電源操作に PE v2 API を使用（PC v3 PUT が使えない場合）
+    peEndpoint: "https://prism-element.example.com:9440"
+    peSecretRef:
+      name: ahv-credentials
+
+  vms:
+    - name: windows-vm-01   # AHV 上の VM 名
+      targetName: test-win-ove         # OVE 側の名前
+      uefi: true                          # PE v2 確認: uefi_boot=true
+      diskBus: scsi                       # AHV は virtio-scsi ネイティブ。vioscsi が boot-start 済みでそのまま起動できる
+                                          # （virtio=virtio-blk は viostor サービスが無く INACCESSIBLE_BOOT_DEVICE。E2E実証: 2026-07-12）
+      nicModel: e1000e
+      keepMAC: false
+      guestPrepMode: winrm
+      guestPrepWinRMConfig:
+        winrmSecretRef:
+          name: winrm-test-win
+        useHTTPS: true
+        timeoutSeconds: 600
+        preMigrationScript: |
+          $ErrorActionPreference = "Stop"
+          $isoPath = "C:\virtio-win-515.iso"
+          $isoUrl  = "http://<virtio-iso-server>:<nodePort>/"
+          $expectedSize = 539793408
+
+          # ISO ダウンロード（未存在 or サイズ不一致の場合）
+          $needDownload = $true
+          if (Test-Path $isoPath) {
+              $actualSize = (Get-Item $isoPath).Length
+              if ($actualSize -eq $expectedSize) {
+                  Write-Host "ISO already exists with correct size: $isoPath ($actualSize bytes)"
+                  $needDownload = $false
+              } else {
+                  Write-Host "ISO size mismatch ($actualSize != $expectedSize), re-downloading..."
+                  Remove-Item $isoPath -Force -ErrorAction SilentlyContinue
+              }
+          }
+          if ($needDownload) {
+              Write-Host "Downloading virtio-win.iso from $isoUrl ..."
+              $wc = New-Object System.Net.WebClient
+              $wc.DownloadFile($isoUrl, $isoPath)
+              Write-Host "Download complete: $(Get-Item $isoPath | Select-Object -ExpandProperty Length) bytes"
+          }
+
+          # ISO マウント
+          Write-Host "Mounting $isoPath ..."
+          $disk = Mount-DiskImage -ImagePath $isoPath -PassThru
+          $driveLetter = ($disk | Get-Volume).DriveLetter
+          Write-Host "Mounted at ${driveLetter}:"
+
+          # ドライバーインストール（追加のみ、削除しない）
+          # 注意: ISO ルートの \amd64\<os>\ レイアウトは一部ドライバーのみで vioser が含まれない。
+          #       per-driver ディレクトリ（\vioserial\2k22\amd64\ 等）から全部入れる（E2E実証: 2026-07-12）
+          Write-Host "Installing virtio drivers..."
+          $drivers = @("vioscsi", "viostor", "vioserial", "NetKVM", "Balloon")
+          $osDirs  = @("2k25", "2k22", "w11", "w10")   # 先に見つかった OS ディレクトリを採用
+          $installed = 0
+          foreach ($drv in $drivers) {
+              $inf = $null
+              foreach ($os in $osDirs) {
+                  $cand = Get-ChildItem "${driveLetter}:\$drv\$os\amd64\*.inf" -ErrorAction SilentlyContinue
+                  if ($cand) { $inf = $cand; break }
+              }
+              if (-not $inf) {
+                  Write-Host "WARNING: no .inf for $drv"
+                  continue
+              }
+              foreach ($f in $inf) {
+                  Write-Host "Adding driver: $($f.FullName)"
+                  pnputil /add-driver $f.FullName /install 2>&1 | Out-Null
+                  $installed++
+              }
+          }
+          if ($installed -eq 0) {
+              Write-Error "No virtio driver .inf found on ISO"
+              Dismount-DiskImage -ImagePath $isoPath | Out-Null
+              exit 1
+          }
+
+          # QEMU guest agent インストール（移行後に KubeVirt が IP/OS情報を取得できるようにする）
+          $gaMsi = "${driveLetter}:\guest-agent\qemu-ga-x86_64.msi"
+          if (Test-Path $gaMsi) {
+              Write-Host "Installing QEMU guest agent..."
+              Start-Process msiexec -ArgumentList "/i", $gaMsi, "/qn" -Wait
+          } else {
+              Write-Host "WARNING: guest-agent MSI not found on ISO"
+          }
+
+          # ISO アンマウント
+          Write-Host "Dismounting ISO..."
+          Dismount-DiskImage -ImagePath $isoPath | Out-Null
+          Write-Host "virtio-win driver installation complete."
+
+  networkMappings:
+    - source: "Default-LAN"
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: ""
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteOnce
+      volumeMode: Filesystem
+
+  targetNamespace: "vm-migration"

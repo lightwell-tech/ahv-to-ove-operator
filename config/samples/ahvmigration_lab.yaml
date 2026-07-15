@@ -1,0 +1,54 @@
+---
+# AHV 認証情報 Secret
+# kubectl create secret generic ahv-credentials \
+#   --from-literal=user=admin \
+#   --from-literal=password='YOUR_PRISM_PASSWORD' \
+#   -n ahv-to-ove-operator-system
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ahv-credentials
+  namespace: ahv-to-ove-operator-system
+type: Opaque
+stringData:
+  user: admin
+  password: CHANGE_ME
+
+---
+# 社内ラボ: AHV (PrismCentral prism-central.example.com) → OVE (example-ove-cluster) 移行例
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: lab-migration-01
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-central.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true   # 自己署名証明書のため
+
+  vms:
+    # RHEL VM の例
+    - name: rhel9-web01
+      targetName: rhel9-web01
+    - name: rhel9-db01
+      targetName: rhel9-db01
+    # Windows VM の例
+    - name: win2025-app01
+      targetName: win2025-app01
+
+  networkMappings:
+    # AHV VLAN 名 → OVE example-bridge (example-bridge)
+    - source: "VLAN-100"          # AHV 上のネットワーク名（実際の名前に変更）
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    # AHV ストレージコンテナ → OVE ストレージクラス
+    - source: "default"           # AHV ストレージコンテナ名（実際の名前に変更）
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteMany
+      volumeMode: Block
+
+  targetNamespace: "vm-migration"

@@ -1,0 +1,53 @@
+---
+# TestRunning フェーズ E2E 検証用（2026-07-12）
+#
+# 対象VM: rhel8-test-01 (AHV, 20GB, UEFI, OFF)
+# 検証ポイント:
+#   - networkMappings[].testTarget 指定時のフロー:
+#     CreatingVMs → TestRunning（テストNAD起動）→ annotation承認 → TestPending
+#     → SwitchingNetwork（本番NADへ切替）→ Completed
+#   - diskBus 無指定 → デフォルト scsi の動作確認（2026-07-12変更）
+#   - GetImageSizeBytes による DV サイズ実取得の動作確認
+#
+# テスト承認:
+#   oc annotate ahvmigration rhel8-test-migration -n ahv-to-ove-operator-system \
+#     migration.lightwell.co.jp/test-approved=true
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: rhel8-test-migration
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-element.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    shutdownBeforeMigration: true
+    warmMigration: false
+    peEndpoint: "https://prism-element.example.com:9440"
+    peSecretRef:
+      name: ahv-credentials
+
+  vms:
+    - name: rhel8-test-01
+      targetName: rhel8-test-ove
+      uefi: true
+      # diskBus 無指定 → デフォルト scsi（2026-07-12 変更の検証）
+      keepMAC: false
+
+  networkMappings:
+    - source: "Default-LAN"
+      target: "example-bridge"
+      testTarget: "test-bridge-001"   # テストVLANで先に起動 → 承認後 example-bridge へ
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: ""
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteOnce
+      volumeMode: Filesystem
+
+  targetNamespace: "vm-migration"

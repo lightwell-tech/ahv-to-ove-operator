@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ahv-to-ove-operator-controller-manager
+  namespace: ahv-to-ove-operator-system
+  labels:
+    app: ahv-to-ove-operator
+    control-plane: controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        app: ahv-to-ove-operator
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: ahv-to-ove-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: manager
+          image: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+          imagePullPolicy: Always
+          command:
+            - /manager
+          args:
+            - --leader-elect=true
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_IMAGE
+              value: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      securityContext:
+        runAsNonRoot: true

@@ -1,0 +1,70 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ahv-to-ove-operator-manager-role
+rules:
+  # AHVMigration CRD
+  - apiGroups: ["migration.lightwell.co.jp"]
+    resources: ["ahvmigrations"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["migration.lightwell.co.jp"]
+    resources: ["ahvmigrations/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["migration.lightwell.co.jp"]
+    resources: ["ahvmigrations/finalizers"]
+    verbs: ["update"]
+
+  # CDI DataVolume 操作
+  - apiGroups: ["cdi.kubevirt.io"]
+    resources: ["datavolumes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # KubeVirt VirtualMachine 操作
+  - apiGroups: ["kubevirt.io"]
+    resources: ["virtualmachines"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # Secret 操作（AHV 認証情報 + CDI Basic Auth Secret）
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # CBT delta-sync Job / ConfigMap 操作
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+
+  # Events
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+  # Leader election（controller-runtime が leases を使う）
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ahv-to-ove-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ahv-to-ove-operator-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: ahv-to-ove-operator-controller-manager
+    namespace: ahv-to-ove-operator-system
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ahv-to-ove-operator-controller-manager
+  namespace: ahv-to-ove-operator-system

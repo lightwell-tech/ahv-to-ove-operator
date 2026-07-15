@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: go fmt
+        run: |
+          gofmt_out=$(gofmt -l $(git ls-files "*.go"))
+          if [ -n "$gofmt_out" ]; then
+            echo "Files not formatted:"
+            echo "$gofmt_out"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build -o bin/manager main.go
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test ./... -v -coverprofile=coverage.out
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+
+  bundle-validate:
+    name: Bundle Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install operator-sdk
+        run: |
+          curl -Lo /usr/local/bin/operator-sdk \
+            https://github.com/operator-framework/operator-sdk/releases/download/v1.36.0/operator-sdk_linux_amd64
+          chmod +x /usr/local/bin/operator-sdk
+
+      - name: Validate bundle
+        run: operator-sdk bundle validate ./bundle
+
+  console-plugin:
+    name: Console Plugin Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: console-plugin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        # npm install (not `npm ci`): no package-lock.json is committed yet
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,48 @@
+---
+# WarmFinalSync（Phase A: cutover後再同期）E2E 検証用（2026-07-12）
+#
+# 対象VM: rhel8-test-01 (AHV, 20GB, UEFI, 稼働中で開始すること)
+# 検証ポイント:
+#   WarmPreSync（稼働中にimage化）→ WarmSyncing（フルコピー）→ WarmCutover（停止）
+#   → WarmFinalSync（停止後にimage再作成→DV作り直し→再フルコピー）★新実装
+#   → ImportingDisks → CreatingVMs → Completed
+#   - status.vms[].tempImageRefs がプリコピー(warm-*)→最終(final-*)で入れ替わること
+#   - 旧DVが削除され同名DVが再作成されること
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: rhel8-warm-final
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-element.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    warmMigration: true
+    pauseBeforeCutover: false      # E2E用に自動カットオーバー
+    # warmFinalFullSync: 省略 → デフォルト true（WarmFinalSync 実行）
+    peEndpoint: "https://prism-element.example.com:9440"
+    peSecretRef:
+      name: ahv-credentials
+
+  vms:
+    - name: rhel8-test-01
+      targetName: rhel8-warm-ove
+      uefi: true
+      keepMAC: false
+
+  networkMappings:
+    - source: "Default-LAN"
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: ""
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteOnce
+      volumeMode: Filesystem
+
+  targetNamespace: "vm-migration"

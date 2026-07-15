@@ -1,0 +1,52 @@
+---
+# CBT差分同期（Phase B: WarmDeltaSync + WarmFinalDelta）E2E 検証用（2026-07-13）
+#
+# 対象VM: rhel8-test-01 (AHV, 20GB, UEFI, 稼働中で開始すること)
+# 検証ポイント:
+#   WarmPreSync（snap0作成→image化→フルコピー）→ WarmSyncing
+#   → WarmDeltaSync（snapN→changed_regions→delta-sync Job→旧snap削除、のループ）★新実装
+#   → 収束 → WarmCutover（停止）→ WarmFinalDelta（最終snap→最終差分Job）★新実装
+#   → CreatingVMs → Completed
+#   - deltaSyncThresholdMB=1 / maxDeltaRounds=3 で cutover 前ラウンドを強制的に踏ませる
+#   - status.vms[].deltaRounds / lastDeltaBytes / delta-* Job の生成・完了を確認
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: rhel8-cbt
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-element.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    warmMigration: true
+    pauseBeforeCutover: false
+    cbt:
+      enabled: true
+      deltaSyncThresholdMB: 1   # E2E用: ほぼ確実に閾値超過にして差分ラウンドを踏ませる
+      maxDeltaRounds: 3         # 3ラウンドで打ち切り→cutover
+    peEndpoint: "https://prism-element.example.com:9440"
+    peSecretRef:
+      name: ahv-credentials
+
+  vms:
+    - name: rhel8-test-01
+      targetName: rhel8-cbt-ove
+      uefi: true
+      keepMAC: false
+
+  networkMappings:
+    - source: "Default-LAN"
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: ""
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteOnce
+      volumeMode: Filesystem
+
+  targetNamespace: "vm-migration"

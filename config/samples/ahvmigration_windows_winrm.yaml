@@ -1,0 +1,58 @@
+---
+# Windows VM WinRM GuestPrep テスト用
+#
+# 事前作業:
+#   1. WinRM Secret を作成 (下の Secret YAML を参照)
+#   2. C:\virtio-win.iso が windows-vm-01 上に存在することを確認
+#      (なければ ISO を転送するか virtIOWinISOPath を変更する)
+#
+# 適用:
+#   oc apply -f winrm-secret.yaml
+#   oc apply -f ahvmigration_windows_winrm.yaml
+#   oc get ahvmigration win-example001-winrm -n ahv-to-ove-operator-system -w
+#
+# フロー:
+#   Pending → GuestPrepping (WinRM で virtio-win インストール)
+#   → ImportingDisks → CreatingVMs → Completed
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: win-example001-winrm
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-central.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    shutdownBeforeMigration: true   # virtio-win install → shutdown → disk import
+    warmMigration: false
+
+  vms:
+    - name: windows-vm-01          # AHV 上の VM 名
+      targetName: windows-vm-01-ove  # OVE 側の名前
+      uefi: true                     # Prism から検出: UEFI ブート
+      diskBus: sata                  # Windows は virtio-blk ドライバー無しでは起動不可
+      nicModel: e1000e               # Windows で確実に動く NIC モデル
+      keepMAC: false                 # KubeMacPool と競合しないよう MAC は自動割り当て
+      guestPrepMode: winrm
+      guestPrepWinRMConfig:
+        winrmSecretRef:
+          name: winrm-example001      # 下の Secret 参照
+        virtIOWinISOPath: 'C:\virtio-win.iso'
+        timeoutSeconds: 600
+
+  networkMappings:
+    - source: "Default-LAN"          # Prism 上のネットワーク名 (NGT確認済み)
+      target: "example-bridge"          # OVE 本番 NAD
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: ""
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteOnce
+      volumeMode: Filesystem
+
+  targetNamespace: "vm-migration"

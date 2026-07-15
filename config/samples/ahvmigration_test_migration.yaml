@@ -1,0 +1,57 @@
+---
+# テスト移行フロー（testTarget指定）E2Eテスト用
+#
+# フロー:
+#   ImportingDisks → CreatingVMs → TestRunning（テストVLAN起動）
+#   → [手動] annotation test-approved=true を付与
+#   → TestPending（停止）→ SwitchingNetwork（本番VLANに切替）→ Completed
+#
+# 事前確認:
+#   oc get nad -n virtual-machines
+#   → testTarget用NAD名 と 本番NAD名 を確認してから spec を更新する
+#
+# 適用:
+#   oc apply -f ahvmigration_test_migration.yaml
+#   oc get ahvmigration test-migration-01 -n ahv-to-ove-operator-system -w
+#
+# テスト承認:
+#   oc annotate ahvmigration test-migration-01 \
+#     migration.lightwell.co.jp/test-approved=true \
+#     -n ahv-to-ove-operator-system
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: test-migration-01
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-central.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    # warmMigration/shutdownBeforeMigration はどちらでも testTarget は機能する
+    # まず最シンプルな通常インポート（image backing ありの disk のみ）で試す
+    shutdownBeforeMigration: false
+    warmMigration: false
+
+  vms:
+    - name: example-vm              # AHV 上のテスト VM（bare disk でない RHEL VM）
+      targetName: ansible-lw-test   # OVE 側の名前（既存VMと被らないよう -test を付ける）
+      # diskBus/nicModel は省略 → virtio デフォルト（Linux なので OK）
+
+  networkMappings:
+    - source: "VLAN-100"            # AHV 上のネットワーク名（oc get vm で確認）
+      target: "example-bridge"         # 本番NAD
+      testTarget: "example-bridge"     # テスト用NAD
+      #   ラボではNADが1種類なので同じものを指定してフロー確認のみ行う
+      targetNamespace: "virtual-machines"
+
+  storageMappings:
+    - source: ""                    # AHV デフォルトストレージ
+      targetStorageClass: "ocs-storagecluster-ceph-rbd-virtualization"
+      accessMode: ReadWriteMany
+      volumeMode: Block
+
+  targetNamespace: "virtual-machines"

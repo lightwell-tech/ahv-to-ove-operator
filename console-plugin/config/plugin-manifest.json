@@ -1,0 +1,13 @@
+{
+  "name": "ahv-to-ove-plugin",
+  "version": "0.1.0",
+  "displayName": "AHV to OVE Migration",
+  "description": "Nutanix AHV から OpenShift Virtualization への VM 移行管理",
+  "exposedModules": {
+    "MigrationListPage": "./src/components/MigrationListPage",
+    "MigrationDetailPage": "./src/components/MigrationDetailPage"
+  },
+  "dependencies": {
+    "@console/pluginAPI": ">=4.14.0"
+  }
+}

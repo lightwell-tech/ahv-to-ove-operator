@@ -1,0 +1,25 @@
+# Binaries / build output
+bin/
+dist/
+*.exe
+*.out
+*.test
+
+# Go
+vendor/
+*.o
+*.a
+
+# Local env / secrets
+*.env
+.env
+*.local
+kubeconfig
+*.kubeconfig
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

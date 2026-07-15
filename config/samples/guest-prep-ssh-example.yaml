@@ -1,0 +1,56 @@
+# GuestPrep/ssh モードの使用例
+# 移行前にSSH経由でvirtioドライバーをinitramfsに注入する
+
+---
+# Step1: SSH認証情報のSecret (事前に作成)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ansible-lw-ssh-key
+  namespace: vm-migration
+stringData:
+  host: "192.168.x.x:22"   # AHV VM のIPアドレス
+  user: "root"
+  # privateKey か password のどちらかを指定
+  password: "your-password"
+  # privateKey: |
+  #   -----BEGIN OPENSSH PRIVATE KEY-----
+  #   ...
+  #   -----END OPENSSH PRIVATE KEY-----
+
+---
+# Step2: AHVMigration (guestPrepMode: ssh を指定)
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: ansible-lw-with-prep
+  namespace: vm-migration
+spec:
+  source:
+    endpoint: https://prism-central.example.com:9440
+    secretRef:
+      name: prism-credentials
+    insecure: true
+    cdiProxyURL: http://prism-proxy.vm-migration.svc:9440
+    warmMigration: true
+    pauseBeforeCutover: true
+  vms:
+  - name: example-vm
+    targetName: ansible-lw-migrated
+    guestPrepMode: ssh
+    guestPrepConfig:
+      sshSecretRef:
+        name: ansible-lw-ssh-key
+      # RHEL/CentOS向けドライバー注入スクリプト
+      preMigrationScript: |
+        set -e
+        echo "Installing virtio drivers into initramfs..."
+        dracut --add-drivers "virtio virtio_blk virtio_scsi" -f
+        echo "Updating grub with virtio pre-load..."
+        grubby --args="rd.driver.pre=virtio_blk rd.driver.pre=virtio_scsi" --update-kernel=ALL
+        echo "Guest prep complete."
+      timeoutSeconds: 300
+  networkMappings:
+  - source: "VLAN-XXX"
+    target: example-bridge
+    targetNamespace: vm-migration

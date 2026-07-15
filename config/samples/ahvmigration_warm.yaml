@@ -1,0 +1,40 @@
+---
+# ウォームマイグレーション: VM を止めずに初回インポート → 完了後にシャットダウン
+# ダウンタイム = ACPI シャットダウン時間のみ（数十秒〜数分）
+#
+# フロー:
+#   WarmPreSync  → VM 起動中に Prism image 化 (数分)
+#   WarmSyncing  → CDI DataVolume インポート待機 (数時間, VM は起動中)
+#   WarmCutover  → ACPI 停止 (VM ダウンタイム開始)
+#   CreatingVMs  → KubeVirt VM 作成 → Completed (ダウンタイム終了)
+#
+apiVersion: migration.lightwell.co.jp/v1alpha1
+kind: AHVMigration
+metadata:
+  name: warm-migration-01
+  namespace: ahv-to-ove-operator-system
+spec:
+  source:
+    endpoint: "https://prism-central.example.com:9440"
+    secretRef:
+      name: ahv-credentials
+    insecure: true
+    cdiProxyURL: "http://prism-proxy.vm-migration.svc:9440"
+    warmMigration: true   # VM 起動中に pre-copy → ダウンタイム最小化
+
+  vms:
+    - name: example-vm
+      targetName: ansible-lw-migrated
+
+  networkMappings:
+    - source: "VLAN-100"
+      target: "example-bridge"
+      targetNamespace: "vm-migration"
+
+  storageMappings:
+    - source: "default"
+      targetStorageClass: "ocs-storagecluster-ceph-rbd"
+      accessMode: ReadWriteMany
+      volumeMode: Block
+
+  targetNamespace: "vm-migration"

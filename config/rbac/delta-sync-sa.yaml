@@ -1,0 +1,31 @@
+---
+# CBT delta-sync Job 用の ServiceAccount（移行先 namespace に作成する）
+# - 差分読み出しで snapshot のストレージコンテナを NFS(RO) マウントし、CDI が作る
+#   uid/gid 107 所有の disk.img へ書く。root(0) で NFS 読み+disk.img 書きを両対応する。
+#   → hostmount-anyuid SCC を付与する（nfs ボリューム型 + RunAsAny を許可。anyuid は
+#      nfs ボリュームを許可しないため不足）:
+#      oc adm policy add-scc-to-user hostmount-anyuid -z ahv-delta-sync -n <target-ns>
+# - NFS マウント先コンテナの Filesystem Whitelist に OCP ノードのサブネット登録も前提
+#   （例: default-container の nfs_whitelist に 198.51.100.0/24）
+# - operator イメージ（internal registry の ahv-to-ove-operator-system ns）を pull するため
+#   image-puller 権限も必要（下の RoleBinding）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ahv-delta-sync
+  namespace: vm-migration
+---
+# internal registry の operator イメージを vm-migration ns の Job が pull できるようにする
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ahv-delta-sync-image-puller
+  namespace: ahv-to-ove-operator-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:image-puller
+subjects:
+  - kind: ServiceAccount
+    name: ahv-delta-sync
+    namespace: vm-migration
