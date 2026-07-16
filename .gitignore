@@ -5,6 +5,10 @@ dist/
 *.out
 *.test
 
+# Node / JS (console-plugin)
+node_modules/
+package-lock.json.bak
+
 # Go
 vendor/
 *.o
