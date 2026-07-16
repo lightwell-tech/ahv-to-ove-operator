@@ -1,10 +1,11 @@
 ---
 # CBT delta-sync Job 用の ServiceAccount（移行先 namespace に作成する）
 # - 差分読み出しで snapshot のストレージコンテナを NFS(RO) マウントし、CDI が作る
-#   uid/gid 107 所有の disk.img へ書く。root(0) で NFS 読み+disk.img 書きを両対応する。
-#   → hostmount-anyuid SCC を付与する（nfs ボリューム型 + RunAsAny を許可。anyuid は
-#      nfs ボリュームを許可しないため不足）:
-#      oc adm policy add-scc-to-user hostmount-anyuid -z ahv-delta-sync -n <target-ns>
+#   uid/gid 107 所有の disk.img へ uid 107 として書く。
+#   → 専用 SCC を適用して付与する（nfs ボリューム型 + uid 107 のみ許可。標準の
+#      restricted-v2/anyuid は nfs ボリュームを許可せず Pod が作成できない）:
+#      oc apply -f config/rbac/delta-sync-scc.yaml
+#      oc adm policy add-scc-to-user ahv-delta-sync -z ahv-delta-sync -n <target-ns>
 # - NFS マウント先コンテナの Filesystem Whitelist に OCP ノードのサブネット登録も前提
 #   （例: default-container の nfs_whitelist に 198.51.100.0/24）
 # - operator イメージ（internal registry の ahv-to-ove-operator-system ns）を pull するため

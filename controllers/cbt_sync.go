@@ -199,11 +199,13 @@ func buildDeltaSyncJob(mig *migrationv1alpha1.AHVMigration, vmIdx, diskIdx int, 
 			{Name: "src", MountPath: "/src", ReadOnly: true},
 		},
 		SecurityContext: &corev1.SecurityContext{
-			// NFS 上の snapshot を read、CDI が作る uid/gid 107 所有の disk.img を write する。
-			// root(0) なら DAC_OVERRIDE で両対応（anyuid SCC 付き SA が前提。ケーパビリティは
-			// 既定のまま = DAC_OVERRIDE を残すため Drop はしない）。
-			RunAsUser:  ptr.To(int64(0)),
-			RunAsGroup: ptr.To(int64(0)),
+			// uid/gid 107 (qemu) で動かす。CDI が作る disk.img は 107 所有なので所有者として
+			// 書き込め、snapshot ファイルは world-readable なので読み出せる。root/DAC_OVERRIDE
+			// は不要。専用 SCC `ahv-delta-sync`（nfs ボリューム + uid 107 のみ許可）が前提。
+			RunAsUser:                ptr.To(int64(107)),
+			RunAsGroup:               ptr.To(int64(107)),
+			AllowPrivilegeEscalation: ptr.To(false),
+			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 	}
 

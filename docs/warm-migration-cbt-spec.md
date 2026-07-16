@@ -122,7 +122,10 @@ Job pod spec (essentials):
 ```yaml
 serviceAccountName: ahv-delta-sync
 securityContext (container):
-  runAsUser: 0            # root: DAC_OVERRIDE to read NFS + write uid-107-owned disk.img
+  runAsUser: 107          # qemu: owns the CDI-created disk.img; snapshot files are world-readable
+  runAsGroup: 107
+  allowPrivilegeEscalation: false
+  capabilities: {drop: [ALL]}
 volumes:
   - name: regions  (configMap: <job name>)                        # mounted /config (RO)
   - name: src      (nfs: server=<nfsServer> path=/<container> RO)  # snapshot container
@@ -157,19 +160,21 @@ region retries up to 3× (idempotent). Final `fsync`. Exit non-zero on any regio
    Non-whitelisted clients are **silently dropped** (mount hangs → Job `FailedMount`).
    Example (v2 `storage_containers` PUT): add `198.51.100.0/255.255.255.0` to
    `nfs_whitelist` (this sets `nfs_whitelist_inherited=false` on that container).
-2. **SCC** — the `ahv-delta-sync` ServiceAccount needs **`hostmount-anyuid`**
-   (`oc adm policy add-scc-to-user hostmount-anyuid -z ahv-delta-sync -n <ns>`).
-   The default `anyuid` SCC does **not** allow the `nfs` volume type, so Pods never get
-   created (`FailedCreate`, silent stall). `hostmount-anyuid` allows `nfs` + `RunAsAny`.
+2. **SCC** — apply the dedicated `ahv-delta-sync` SCC and grant it to the ServiceAccount:
+   ```bash
+   oc apply -f config/rbac/delta-sync-scc.yaml
+   oc adm policy add-scc-to-user ahv-delta-sync -z ahv-delta-sync -n <ns>
+   ```
+   This is required: the default `restricted-v2` and `anyuid` SCCs do **not** allow the
+   `nfs` volume type, so the Job's Pods are never created (`FailedCreate` — the Job stalls
+   silently with no Pod to inspect). The dedicated SCC allows only `nfs` + uid 107; it does
+   not grant hostPath or privilege escalation (unlike `hostmount-anyuid`, which also works
+   but is broader than necessary).
 3. **Image pull** — `system:image-puller` RoleBinding so the Job (in the target ns) can
    pull the operator image from the internal registry (see `config/rbac/delta-sync-sa.yaml`).
 
 ## 8. Limitations / future work
 
-- **Root Job pods.** The runner runs as uid 0 for `DAC_OVERRIDE`. Snapshot files are
-  world-readable and `disk.img` is uid-107-owned, so running as **uid 107** would also work
-  and is the intended hardening — paired with a **custom SCC** that allows `nfs` but not
-  `hostPath` (narrower than `hostmount-anyuid`).
 - **Container-scoped whitelist.** Adding the node subnet flips the container to
   `inherited=false`; changes to the global whitelist no longer propagate to it.
 - **PE-only.** CBT here uses PE v3 APIs (no Prism Central). The v4 Data Protection / CRT

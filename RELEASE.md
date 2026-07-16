@@ -91,6 +91,6 @@ The OpenShift in-cluster OperatorHub "Community" catalog is fed by
 - OpenShift Virtualization (KubeVirt) + CDI
 - A `Secret` with Prism credentials
 - **Only for CBT delta sync** (`source.cbt.enabled: true`): the `ahv-delta-sync`
-  ServiceAccount with the `hostmount-anyuid` SCC in the target namespace, and the Nutanix
-  storage container's NFS whitelist opened to the OpenShift node subnet — see
+  ServiceAccount granted the dedicated `ahv-delta-sync` SCC in the target namespace, and the
+  Nutanix storage container's NFS whitelist opened to the OpenShift node subnet — see
   [docs/warm-migration-cbt-spec.md](docs/warm-migration-cbt-spec.md).

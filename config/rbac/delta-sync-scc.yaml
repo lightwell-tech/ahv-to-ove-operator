@@ -1,0 +1,59 @@
+---
+# CBT delta-sync Job 用の SecurityContextConstraints。
+#
+# なぜ専用 SCC が要るか:
+#   delta-sync Job は snapshot のストレージコンテナを `nfs` ボリュームでマウントする。
+#   標準の `restricted-v2` は nfs ボリュームを許可せず、`anyuid` も nfs を許可しないため
+#   Pod が作成できない（FailedCreate で無限に停滞する）。`hostmount-anyuid` は nfs を
+#   許可するが hostPath まで許可してしまい過剰。
+#
+# この SCC は「nfs ボリューム + uid/gid 107 固定」だけを許可し、hostPath・特権・
+# 権限昇格はすべて禁止する。
+#
+# uid 107 の理由:
+#   CDI が作る disk.img は uid/gid 107 (qemu) 所有。107 で動けば所有者として書き込め、
+#   snapshot ファイルは world-readable なので読み出しもできる（root/DAC_OVERRIDE 不要）。
+#
+# 適用:
+#   oc apply -f config/rbac/delta-sync-scc.yaml
+#   oc adm policy add-scc-to-user ahv-delta-sync -z ahv-delta-sync -n <target-ns>
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: ahv-delta-sync
+  annotations:
+    kubernetes.io/description: >-
+      Allows the CBT delta-sync Job to mount the Nutanix snapshot storage container as an
+      NFS volume and run as uid/gid 107 (qemu) so it can write the CDI-created disk.img.
+      Denies hostPath, privilege escalation and all capabilities.
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+allowHostDirVolumePlugin: false
+allowHostNetwork: false
+allowHostPorts: false
+allowHostPID: false
+allowHostIPC: false
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+allowedCapabilities: []
+defaultAddCapabilities: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - nfs
+  - persistentVolumeClaim
+  - projected
+  - secret
+runAsUser:
+  type: MustRunAs
+  uid: 107
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+users: []
+groups: []

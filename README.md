@@ -489,7 +489,6 @@ Areas especially looking for contributions:
 - **Unit tests** for reconciler logic
 - **`virt-v2v` conversion mode** — automated driver conversion for guests that cannot be reached over SSH/WinRM
 - **Console Plugin packaging** — ship the UI in the OLM bundle (it is manual-install in v0.1.x)
-- **CBT hardening** — run the delta-sync Job as uid 107 with a dedicated SCC instead of root + `hostmount-anyuid`
 - **iSCSI transport** for CBT delta reads, as an alternative to NFS
 
 ---

@@ -88,9 +88,10 @@ spec:
 
     **Additional prerequisites for CBT Delta Sync** (only when `source.cbt.enabled: true`):
 
-    - A `ahv-delta-sync` ServiceAccount in the target namespace with the `hostmount-anyuid`
-      SCC (the delta Job mounts the snapshot container as an `nfs` volume, which `anyuid`
-      does not permit): `oc adm policy add-scc-to-user hostmount-anyuid -z ahv-delta-sync -n <ns>`
+    - A `ahv-delta-sync` ServiceAccount in the target namespace, granted the dedicated
+      `ahv-delta-sync` SCC (`config/rbac/delta-sync-scc.yaml`). The delta Job mounts the
+      snapshot container as an `nfs` volume, which the default SCCs do not permit:
+      `oc apply -f config/rbac/delta-sync-scc.yaml && oc adm policy add-scc-to-user ahv-delta-sync -z ahv-delta-sync -n <ns>`
     - The snapshot's Nutanix storage container must allow the OpenShift node subnet in its
       NFS Filesystem Whitelist (this is a Nutanix-side setting and cannot be automated by the
       operator). See `config/rbac/delta-sync-sa.yaml` and `docs/warm-migration-cbt-spec.md`.
