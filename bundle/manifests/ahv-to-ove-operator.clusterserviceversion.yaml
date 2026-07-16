@@ -81,7 +81,7 @@ spec:
 
     ## Prerequisites
 
-    - OpenShift 4.10+ with OpenShift Virtualization (KubeVirt) installed
+    - OpenShift 4.13+ with OpenShift Virtualization (KubeVirt) installed
     - CDI (Containerized Data Importer) installed
     - Nutanix Prism Central v3 API accessible from the cluster
     - A `Secret` with Prism Central credentials (`user` / `password` keys)

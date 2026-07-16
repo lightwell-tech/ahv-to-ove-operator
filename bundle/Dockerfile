@@ -12,8 +12,8 @@ LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha
 LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
 LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
 
-# Supported OpenShift versions (community-operators-prod)
-LABEL com.redhat.openshift.versions="v4.12"
+# Supported OpenShift versions (>= 4.13; matches minKubeVersion 1.26 in the CSV)
+LABEL com.redhat.openshift.versions="v4.13"
 
 # Copy bundle contents
 COPY manifests/ /manifests/

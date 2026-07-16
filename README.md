@@ -92,8 +92,8 @@ User applies AHVMigration CR
 
 | Component | Minimum Version | Notes |
 |-----------|----------------|-------|
-| OpenShift | 4.10 | OCP or OKD |
-| OpenShift Virtualization | 4.10 | KubeVirt operator |
+| OpenShift | 4.13+ | OCP or OKD (matches `minKubeVersion: 1.26`) |
+| OpenShift Virtualization | 4.13+ | KubeVirt operator |
 | CDI (Containerized Data Importer) | 1.58 | Usually bundled with OCP Virt |
 | Nutanix Prism Central | 2022.4+ | v3 API must be reachable from cluster |
 | Go (for local build) | 1.23 | |

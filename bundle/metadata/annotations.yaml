@@ -11,5 +11,5 @@ annotations:
   operators.operatorframework.io.test.mediatype.v1: scorecard+v1
   operators.operatorframework.io.test.config.v1: tests/scorecard/
 
-  # Supported OpenShift versions for community-operators-prod (>= 4.12)
-  com.redhat.openshift.versions: "v4.12"
+  # Supported OpenShift versions (>= 4.13; matches minKubeVersion 1.26 in the CSV)
+  com.redhat.openshift.versions: "v4.13"
