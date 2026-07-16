@@ -31,13 +31,13 @@ type PrismClient struct {
 
 // VMInfo は Prism API から取得した VM のメタデータ
 type VMInfo struct {
-	UUID       string
-	Name       string
-	NumCPUs    int64
-	MemoryMB   int64
-	DiskList   []DiskInfo
-	NICList    []NICInfo
-	IsUEFI     bool   // Prism の boot_config が UEFI、または EFI System パーティション検出時に true
+	UUID     string
+	Name     string
+	NumCPUs  int64
+	MemoryMB int64
+	DiskList []DiskInfo
+	NICList  []NICInfo
+	IsUEFI   bool // Prism の boot_config が UEFI、または EFI System パーティション検出時に true
 }
 
 // DiskInfo は個々のディスク情報
@@ -148,7 +148,7 @@ func (p *PrismClient) doRequest(ctx context.Context, method, path string, body i
 // GetVMByName は VM 名で検索して VMInfo を返す
 func (p *PrismClient) GetVMByName(ctx context.Context, name string) (*VMInfo, error) {
 	body := map[string]interface{}{
-		"kind": "vm",
+		"kind":   "vm",
 		"filter": fmt.Sprintf("vm_name==%s", name),
 	}
 

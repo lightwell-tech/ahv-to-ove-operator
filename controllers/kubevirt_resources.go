@@ -99,7 +99,7 @@ func buildVirtualMachine(
 	} else {
 		// NIC 情報なし → デフォルト Pod ネットワーク
 		interfaces = append(interfaces, map[string]interface{}{
-			"name":     "default",
+			"name":       "default",
 			"masquerade": map[string]interface{}{},
 		})
 		networks = append(networks, map[string]interface{}{
@@ -125,8 +125,8 @@ func buildVirtualMachine(
 					},
 				},
 				"pvc": map[string]interface{}{
-					"accessModes": []interface{}{string(accessMode)},
-					"volumeMode":  string(volumeMode),
+					"accessModes":      []interface{}{string(accessMode)},
+					"volumeMode":       string(volumeMode),
 					"storageClassName": storageClass,
 				},
 			},

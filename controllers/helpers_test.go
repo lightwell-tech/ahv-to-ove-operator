@@ -506,9 +506,9 @@ func TestDVStorageSize_Overhead(t *testing.T) {
 func TestMergeRegions(t *testing.T) {
 	regions := []ChangedRegion{
 		{Offset: 0, Length: 1024, Type: "REGULAR"},
-		{Offset: 2048, Length: 1024, Type: "REGULAR"},          // gap 1024 → 結合される
+		{Offset: 2048, Length: 1024, Type: "REGULAR"},            // gap 1024 → 結合される
 		{Offset: 10 * 1024 * 1024, Length: 512, Type: "REGULAR"}, // gap大 → 別リージョン
-		{Offset: 20 * 1024 * 1024, Length: 4096, Type: "ZEROED"},  // type違い → 別リージョン
+		{Offset: 20 * 1024 * 1024, Length: 4096, Type: "ZEROED"}, // type違い → 別リージョン
 	}
 	merged := mergeRegions(regions, 4*1024*1024)
 	if len(merged) != 3 {

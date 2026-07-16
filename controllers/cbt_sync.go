@@ -79,7 +79,9 @@ func nfsServerHost(mig *migrationv1alpha1.AHVMigration) string {
 
 // splitSnapshotPath は snapshot_file_path をコンテナ名とコンテナ内相対パスに分解する。
 // 例: "/default-container-x/.snapshot/47/.../vmdisk/uuid"
-//   → container="default-container-x", rel=".snapshot/47/.../vmdisk/uuid"
+//
+//	→ container="default-container-x", rel=".snapshot/47/.../vmdisk/uuid"
+//
 // Nutanix ADSF は各ストレージコンテナを "/<container>" として NFS エクスポートするため、
 // コンテナをマウントし rel を pread する。
 func splitSnapshotPath(p string) (container, rel string) {
@@ -268,8 +270,10 @@ func (r *AHVMigrationReconciler) handleWarmFinalDelta(ctx context.Context, mig *
 }
 
 // runDeltaRound は CBT 差分同期の 1 ラウンドを進める per-VM ステートマシン。
-//   PendingSnapshotUUID == "" : 新 snapshot 作成 → changed_regions → (収束判定) → sync Job 起動
-//   PendingSnapshotUUID != "" : Job 完了待ち → 後片付け → 基準 snapshot を昇格
+//
+//	PendingSnapshotUUID == "" : 新 snapshot 作成 → changed_regions → (収束判定) → sync Job 起動
+//	PendingSnapshotUUID != "" : Job 完了待ち → 後片付け → 基準 snapshot を昇格
+//
 // final=false: 差分が閾値未満 or ラウンド上限で "DeltaConverged" → cutover へ
 // final=true : 収束判定なしで必ず 1 ラウンド同期し "FinalDeltaDone" → CreatingVMs へ
 func (r *AHVMigrationReconciler) runDeltaRound(ctx context.Context, mig *migrationv1alpha1.AHVMigration, final bool) (ctrl.Result, error) {

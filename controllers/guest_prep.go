@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	winrm "github.com/masterzen/winrm"
 	migrationv1alpha1 "github.com/lightwell-tech/ahv-to-ove-operator/api/v1alpha1"
+	winrm "github.com/masterzen/winrm"
 	"golang.org/x/crypto/ssh"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -348,4 +348,3 @@ func (r *AHVMigrationReconciler) executeWinRM(ctx context.Context, scheme, host,
 	logger.Info("WinRM guest prep complete", "vm", vmName, "stdout", stdout)
 	return nil
 }
-

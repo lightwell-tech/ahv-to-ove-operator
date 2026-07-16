@@ -346,35 +346,35 @@ type VMStatus struct {
 type AHVMigrationPhase string
 
 const (
-	PhasePending           AHVMigrationPhase = "Pending"
-	PhaseGuestPrepping     AHVMigrationPhase = "GuestPrepping"
-	PhaseFetchingVMInfo    AHVMigrationPhase = "FetchingVMInfo"
-	PhasePreparingImages   AHVMigrationPhase = "PreparingImages"  // VM停止 + disk→image変換
-	PhaseImportingDisks    AHVMigrationPhase = "ImportingDisks"
-	PhaseWaitingForImport  AHVMigrationPhase = "WaitingForImport"
-	PhaseWarmPreSync       AHVMigrationPhase = "WarmPreSync"       // VM起動中にimage化
-	PhaseWarmSyncing       AHVMigrationPhase = "WarmSyncing"       // VM起動中にCDIインポート待機
-	PhaseReadyForCutover   AHVMigrationPhase = "ReadyForCutover"   // カットオーバー待機（手動承認）
-	PhaseWarmCutover       AHVMigrationPhase = "WarmCutover"       // インポート完了→VMシャットダウン
-	PhaseWarmFinalSync     AHVMigrationPhase = "WarmFinalSync"     // 停止後にimage再作成→フルコピーやり直し（RPO=0担保）
-	PhaseWarmDeltaSync     AHVMigrationPhase = "WarmDeltaSync"     // CBT: 稼働中の差分同期ループ
-	PhaseWarmFinalDelta    AHVMigrationPhase = "WarmFinalDelta"    // CBT: 停止後の最終差分同期
-	PhaseCreatingVMs       AHVMigrationPhase = "CreatingVMs"
-	PhaseTestRunning       AHVMigrationPhase = "TestRunning"       // テストVLANでVM起動中
-	PhaseTestPending       AHVMigrationPhase = "TestPending"       // テスト確認の手動承認待ち
-	PhaseSwitchingNetwork  AHVMigrationPhase = "SwitchingNetwork"  // 本番VLANへNIC切り替え中
-	PhaseCompleted         AHVMigrationPhase = "Completed"
-	PhaseFailed            AHVMigrationPhase = "Failed"
+	PhasePending          AHVMigrationPhase = "Pending"
+	PhaseGuestPrepping    AHVMigrationPhase = "GuestPrepping"
+	PhaseFetchingVMInfo   AHVMigrationPhase = "FetchingVMInfo"
+	PhasePreparingImages  AHVMigrationPhase = "PreparingImages" // VM停止 + disk→image変換
+	PhaseImportingDisks   AHVMigrationPhase = "ImportingDisks"
+	PhaseWaitingForImport AHVMigrationPhase = "WaitingForImport"
+	PhaseWarmPreSync      AHVMigrationPhase = "WarmPreSync"     // VM起動中にimage化
+	PhaseWarmSyncing      AHVMigrationPhase = "WarmSyncing"     // VM起動中にCDIインポート待機
+	PhaseReadyForCutover  AHVMigrationPhase = "ReadyForCutover" // カットオーバー待機（手動承認）
+	PhaseWarmCutover      AHVMigrationPhase = "WarmCutover"     // インポート完了→VMシャットダウン
+	PhaseWarmFinalSync    AHVMigrationPhase = "WarmFinalSync"   // 停止後にimage再作成→フルコピーやり直し（RPO=0担保）
+	PhaseWarmDeltaSync    AHVMigrationPhase = "WarmDeltaSync"   // CBT: 稼働中の差分同期ループ
+	PhaseWarmFinalDelta   AHVMigrationPhase = "WarmFinalDelta"  // CBT: 停止後の最終差分同期
+	PhaseCreatingVMs      AHVMigrationPhase = "CreatingVMs"
+	PhaseTestRunning      AHVMigrationPhase = "TestRunning"      // テストVLANでVM起動中
+	PhaseTestPending      AHVMigrationPhase = "TestPending"      // テスト確認の手動承認待ち
+	PhaseSwitchingNetwork AHVMigrationPhase = "SwitchingNetwork" // 本番VLANへNIC切り替え中
+	PhaseCompleted        AHVMigrationPhase = "Completed"
+	PhaseFailed           AHVMigrationPhase = "Failed"
 )
 
 const (
-	ConditionVMInfoFetched  = "VMInfoFetched"
-	ConditionImagesReady    = "ImagesReady"
-	ConditionDisksImported  = "DisksImported"
-	ConditionVMsCreated     = "VMsCreated"
-	ConditionCompleted      = "Completed"
-	ConditionWarmSyncDone   = "WarmSyncDone"
-	ConditionTestApproved   = "TestApproved"
+	ConditionVMInfoFetched = "VMInfoFetched"
+	ConditionImagesReady   = "ImagesReady"
+	ConditionDisksImported = "DisksImported"
+	ConditionVMsCreated    = "VMsCreated"
+	ConditionCompleted     = "Completed"
+	ConditionWarmSyncDone  = "WarmSyncDone"
+	ConditionTestApproved  = "TestApproved"
 
 	// アノテーション定数
 	AnnotationCutoverApproved = "migration.lightwell.co.jp/cutover-approved"

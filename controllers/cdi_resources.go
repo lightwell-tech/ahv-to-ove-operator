@@ -157,7 +157,7 @@ func buildBlankDataVolume(mig *migrationv1alpha1.AHVMigration, vmIdx int, disk D
 				"namespace": ns,
 				"labels":    ownerLabelsMap(mig),
 				"annotations": map[string]interface{}{
-					"migration.lightwell.co.jp/bare-disk":       "true",
+					"migration.lightwell.co.jp/bare-disk":        "true",
 					"migration.lightwell.co.jp/source-disk-uuid": disk.UUID,
 				},
 			},

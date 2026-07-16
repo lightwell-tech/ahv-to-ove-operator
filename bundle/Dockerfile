@@ -8,6 +8,13 @@ LABEL operators.operatorframework.io.bundle.package.v1=ahv-to-ove-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=alpha
 LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha
 
+# Scorecard test configuration
+LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
+LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
+
+# Supported OpenShift versions (community-operators-prod)
+LABEL com.redhat.openshift.versions="v4.12"
+
 # Copy bundle contents
 COPY manifests/ /manifests/
 COPY metadata/  /metadata/
