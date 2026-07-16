@@ -41,7 +41,7 @@ metadata:
       ]
     capabilities: Basic Install
     categories: OpenShift Optional
-    containerImage: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+    containerImage: ghcr.io/lightwell-tech/ahv-to-ove-operator@sha256:eac30bc7107fcdd3c99e52dd352b13d2212ff1c0b10e8ef4e48a9ce632b0264c
     createdAt: "2026-07-15T00:00:00Z"
     description: Migrate VMs from Nutanix AHV (Prism Central) to OpenShift Virtualization
     operatorframework.io/suggested-namespace: ahv-to-ove-operator-system
@@ -265,12 +265,12 @@ spec:
                   runAsNonRoot: true
                 containers:
                   - name: manager
-                    image: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+                    image: ghcr.io/lightwell-tech/ahv-to-ove-operator@sha256:eac30bc7107fcdd3c99e52dd352b13d2212ff1c0b10e8ef4e48a9ce632b0264c
                     args:
                       - --leader-elect
                     env:
                       - name: OPERATOR_IMAGE
-                        value: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+                        value: ghcr.io/lightwell-tech/ahv-to-ove-operator@sha256:eac30bc7107fcdd3c99e52dd352b13d2212ff1c0b10e8ef4e48a9ce632b0264c
                     livenessProbe:
                       httpGet:
                         path: /healthz
@@ -299,7 +299,7 @@ spec:
 
   relatedImages:
     - name: manager
-      image: ghcr.io/lightwell-tech/ahv-to-ove-operator:v0.1.0
+      image: ghcr.io/lightwell-tech/ahv-to-ove-operator@sha256:eac30bc7107fcdd3c99e52dd352b13d2212ff1c0b10e8ef4e48a9ce632b0264c
 
   installModes:
     - type: OwnNamespace
