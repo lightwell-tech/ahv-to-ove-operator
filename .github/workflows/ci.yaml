@@ -31,7 +31,7 @@ jobs:
         run: go vet ./...
 
       - name: Build
-        run: go build -o bin/manager main.go
+        run: go build -o bin/manager .
 
   test:
     name: Unit Tests

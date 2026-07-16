@@ -9,7 +9,7 @@ COPY deltasync.go deltasync.go
 COPY api/ api/
 COPY controllers/ controllers/
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o manager main.go deltasync.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o manager .
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
